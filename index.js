@@ -33,6 +33,54 @@ class Board {
 
         return false;
     }
+
+    checkWin() {
+        let full = true;
+
+        const winning = (prev, elem, i, arr) => {
+            if (elem === -1) {
+                full = false;
+                return false;
+            }
+
+            return prev && arr[i - 1] === elem;
+        }
+
+        for (let row of this.values) {
+            if (row.reduce(winning)) {
+                return row.first;
+            }
+        }
+
+        for (let x = 0; x < this.values[0].length; x++) {
+            const col = new Array(this.values.length);
+            for (let y = 0; y < this.values.length; y++) {
+                col[y] = this.values[y][x];
+            }
+
+            if (col.reduce(winning)) {
+                return col.first;
+            }
+        }
+
+        const diagLen = Math.min(this.values[0].length, this.values.length);
+        const diag1 = new Array(diagLen);
+        const diag2 = new Array(diagLen);
+        for (let i = 0; i < diagLen; i++) {
+            diag1[i] = this.values[i][i];
+            diag2[i] = this.values[diagLen - 1 - i][i];
+        }
+
+        if (diag1.reduce(winning)) {
+            return diag1.first;
+        }
+
+        if (diag2.reduce(winning)) {
+            return diag2.first;
+        }
+
+        return full ? -1 : null;
+    }
 }
 
 
@@ -54,33 +102,48 @@ class Game extends EventEmitter {
         // Make everyone else join the same room as p0
         others.map(pl => pl.join(this.id));
 
-        const nextTurn = () => {
-            this.broadcast('board', board.values);
-            turn++;
-            turn %= p.length;
-            const pl = p[turn];
-            const moveHandler = (x, y) => {
-                if (board.move(x, y, turn)) {
-                    nextTurn();
-                } else {
-                    pl.once('move', moveHandler);
-                }
-            }
-            pl.once('move', moveHandler);
-            pl.emit('your turn');
-        }
-
-        // End the game when a player disconnects
-        const endGame = () => {
-            p.map(pl => pl.emit('game end')
+        // Ends the game.
+        const endGame = (winner) => {
+            p.map(pl => pl.emit('game end', winner)
                    .removeAllListeners('move')
                    .removeAllListeners('disconnect'));
             super.emit('game end');
         }
 
-        p.map(pl => pl.on('disconnect', endGame));
+        // Begins the next turn.
+        const nextTurn = () => {
+            turn++;
+            turn %= p.length;
+            const pl = p[turn];
+            const moveHandler = (x, y) => {
+                if (board.move(x, y, turn)) {
+                    // Move was successful
+                    this.broadcast('board', board.values);
+                    pl.emit('turn end');
 
+                    const winner = board.checkWin()
+                    if (winner !== null) {
+                        // End the game with the winner
+                        endGame(winner);
+                    } else {
+                        nextTurn();
+                    }
+                } else {
+                    // Let the same player move again
+                    pl.once('move', moveHandler);
+                }
+            }
+
+            pl.once('move', moveHandler);
+            pl.emit('turn start', turn);
+        }
+
+        // End the game when a player disconnects
+        p.map(pl => pl.on('disconnect', () => endGame(null)));
+
+        // Start the game and begin the first turn.
         this.broadcast('game start')
+        this.broadcast('board', board.values);
         nextTurn();
     }
 }
