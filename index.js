@@ -20,7 +20,12 @@ class Board {
     }
 
     isValid(x, y) {
-        return 0 <= y && y < this.values.length
+        function isNumeric(n) {
+          return !isNaN(parseFloat(n)) && isFinite(n);
+        }
+
+        return isNumeric(x) && isNumeric(y)
+            && 0 <= y && y < this.values.length
             && 0 <= x && x < this.values[y].length
             && this.values[y][x] === -1;
     }
