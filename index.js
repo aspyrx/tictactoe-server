@@ -36,19 +36,18 @@ class Board {
 
     checkWin() {
         let full = true;
-
         const winning = (prev, elem, i, arr) => {
             if (elem === -1) {
                 full = false;
                 return false;
+            } else {
+                return (i === 0) || (prev && (arr[i - 1] === elem))
             }
-
-            return prev && arr[i - 1] === elem;
         }
 
         for (let row of this.values) {
-            if (row.reduce(winning)) {
-                return row.first;
+            if (row.reduce(winning, true)) {
+                return row[0];
             }
         }
 
@@ -58,8 +57,8 @@ class Board {
                 col[y] = this.values[y][x];
             }
 
-            if (col.reduce(winning)) {
-                return col.first;
+            if (col.reduce(winning, true)) {
+                return col[0];
             }
         }
 
@@ -71,12 +70,12 @@ class Board {
             diag2[i] = this.values[diagLen - 1 - i][i];
         }
 
-        if (diag1.reduce(winning)) {
-            return diag1.first;
+        if (diag1.reduce(winning, true)) {
+            return diag1[0];
         }
 
-        if (diag2.reduce(winning)) {
-            return diag2.first;
+        if (diag2.reduce(winning, true)) {
+            return diag2[0];
         }
 
         return full ? -1 : null;
@@ -119,7 +118,7 @@ class Game extends EventEmitter {
                 if (board.move(x, y, turn)) {
                     // Move was successful
                     this.broadcast('board', board.values);
-                    pl.emit('turn end');
+                    pl.emit('turn end', turn);
 
                     const winner = board.checkWin()
                     if (winner !== null) {
