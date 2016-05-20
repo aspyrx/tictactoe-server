@@ -1,5 +1,6 @@
+/* eslint no-console: "off" */
+
 const EventEmitter = require('events');
-const path = require('path');
 const flags = require('flags');
 const express = require('express');
 const app = express();
