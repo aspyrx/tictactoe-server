@@ -182,9 +182,8 @@ if (require.main === module) {
     flags.defineInteger('port').setDefault(10101)
         .setDescription('The port on which to host the server.');
     flags.defineString('frontendDir')
-        .setDescription('(Optional) The directory in which to look for'
-                        + 'static frontend files. If not specified, no frontend'
-                        + 'will be served.');
+        .setDescription('The directory in which to look for static frontend '
+                        + 'files. If unspecified, no frontend will be served.');
     flags.parse();
 
     const frontendDir = flags.get('frontendDir');
